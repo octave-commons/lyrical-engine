@@ -1,0 +1,55 @@
+name: Daily Lyrical Advance
+
+on:
+  schedule:
+    # 03:00 UTC every day
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  advance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run engine v4 (self-contained, no API needed)
+        run: python engine_v4.py --n 10
+
+      - name: Install opencode
+        run: npm install -g opencode-ai@latest
+
+      - name: Run opencode with big-pickle to evolve the component pool
+        env:
+          # big-pickle is a free provider — no secret needed for public model
+          # If the provider requires an env token, add it as a repo secret
+          OPENCODE_MODEL: big-pickle
+        run: |
+          opencode run \
+            --model "$OPENCODE_MODEL" \
+            --no-confirm \
+            "Read RUN_SUMMARY.md and the five highest-scoring files in generated/. \
+             Then open engine_v4.py and do exactly one thing: \
+             add between 3 and 6 new lyric component entries to the COMPONENTS dict \
+             that are thematically consistent with the Gates-of-Truth world \
+             (characters: duct null patch sei rin ritsu; motifs: consent boundary drift \
+             scar distribution truth-resolves white-page rail lattice). \
+             Do not change any other code. Write the file back."
+
+      - name: Commit results
+        run: |
+          git config user.name  "lyrical-engine[bot]"
+          git config user.email "lyrical-engine[bot]@users.noreply.github.com"
+          git add generated/ memory/ RUN_SUMMARY.md engine_v4.py
+          git diff --cached --quiet || git commit -m "chore(daily): advance run $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push
