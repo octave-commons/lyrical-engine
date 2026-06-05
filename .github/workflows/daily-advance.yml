@@ -30,13 +30,9 @@ jobs:
         run: npm install -g opencode-ai@latest
 
       - name: Run opencode with big-pickle to evolve the component pool
-        env:
-          # big-pickle is a free provider — no secret needed for public model
-          # If the provider requires an env token, add it as a repo secret
-          OPENCODE_MODEL: big-pickle
         run: |
           opencode run \
-            --model "$OPENCODE_MODEL" \
+            --model opencode/big-pickle \
             --no-confirm \
             "Read RUN_SUMMARY.md and the five highest-scoring files in generated/. \
              Then open engine_v4.py and do exactly one thing: \
